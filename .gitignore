@@ -1,5 +1,4 @@
 /target
-Cargo.lock
 .Dockerfile.sconify.default-rt-image
 .Dockerfile.sconify.default-build-image
 .Dockerfile.sconify.runtime-image
