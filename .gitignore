@@ -1,7 +1,1 @@
 /target
-.Dockerfile.sconify.default-rt-image
-.Dockerfile.sconify.default-build-image
-.Dockerfile.sconify.runtime-image
-qr.output
-qrcode.svg
-tmp.singleuse
