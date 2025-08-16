@@ -24,3 +24,18 @@ You should run the spawn server in the same container as the program that uses t
 ## Build
 
 Just execute `cargo build --release` to build the spawn server. 
+
+
+## Examples
+
+Blocking execution of programs:
+
+```bash
+cargo run --example blocking
+```
+
+Asychronous execution of programs:
+
+```bash
+cargo run --example async
+```
