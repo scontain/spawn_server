@@ -5,11 +5,6 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[[example]]
-name = "blocking"                    # cargo run --example blocking
-path = "examples/blocking.rs"        # file or directory with main.rs
-name = "async"                    # cargo run --example async
-path = "examples/async.rs"        # file or directory with main.rs
 
 [dependencies]
 actix-web = "*"
