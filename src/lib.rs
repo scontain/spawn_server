@@ -43,7 +43,7 @@ pub fn sync_remote_execute(cmd: &str) -> (i32, String, String) {
         Ok(resp) => {
             if resp.status().is_success() {
                 let result: CommandResponse = resp.json().unwrap();
-                println!("sync_remote_execute API: Success - received code {}", result.code);
+                eprintln!("sync_remote_execute API: Success - received code {}", result.code);
                 (result.code, result.stdout, result.stderr)
             } else {
                 let result: CommandResponse = resp.json().unwrap();
