@@ -23,10 +23,16 @@ You should run the spawn server in the same container as the program that uses t
 
 ## Build
 
-Just execute `cargo build --release` to build the spawn server. 
-
+Just execute `cargo build --release` to build the spawn server.
 
 ## Examples
+
+To run on specific host and port:
+
+```bash
+SPAWN_SERVER_HOST=0.0.0.0 SPAWN_SERVER_PORT=9000 cargo run
+# -> listens on 0.0.0.0:9000
+```
 
 Blocking execution of programs:
 
