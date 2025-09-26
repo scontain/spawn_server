@@ -45,7 +45,7 @@ pub fn get_spawn_server_addr() -> SocketAddr {
 
 fn get_spawner_command_url() -> String {
     let server_addr = get_spawn_server_addr();
-    format!("{server_addr}/command")
+    format!("http://{server_addr}/command")
 }
 pub fn sync_remote_execute<T: AsRef<str>>(cmd: T) -> (i32, String, String) {
     let cmd = Command {
