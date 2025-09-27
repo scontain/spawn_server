@@ -160,6 +160,18 @@ macro_rules! srpc {
     }};
 }
 
+/// Macro to execute the given command on the spawn server using synchronous communcation
+#[deprecated(
+    since = "0.1.2",
+    note = "Use `srpc!` instead. This macro will be removed."
+)]
+#[macro_export]
+macro_rules! sh {
+    ( $( $cmd:tt )* ) => {{
+        $crate::sync_remote_execute(format!($( $cmd )*))
+    }};
+}
+
 /// Macro to execute the given command on the spawn server using asynchronous communcation
 #[macro_export]
 macro_rules! arpc {
@@ -167,3 +179,4 @@ macro_rules! arpc {
         $crate::async_remote_execute(format!($( $cmd )*))
     }};
 }
+
