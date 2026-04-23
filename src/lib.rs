@@ -1,5 +1,6 @@
 use serde_derive::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr};
+
 use tracing::{error, info, warn};
 
 const DEFAULT_SPAWN_SERVER_PORT: u16 = 8099;
@@ -152,21 +153,70 @@ pub async fn async_remote_execute<T: AsRef<str>>(cmd: T) -> (i32, String, String
     }
 }
 
-/// Macro to execute the given command on the spawn server using synchronous communcation
+pub fn sync_remote_or_local<T: AsRef<str>>(cmd: T) -> (i32, String, String) {
+    let cmd_str = cmd.as_ref();
+    let res = sync_remote_execute(cmd_str);
+
+    // -1 indicates a connection/RPC error (spawn server likely down)
+    if res.0 == -1 {
+        info!("Spawn server unreachable, falling back to local shell");
+        run_local_shell(cmd_str)
+    } else {
+        res
+    }
+}
+
+pub async fn async_remote_or_local<T: AsRef<str>>(cmd: T) -> (i32, String, String) {
+    let cmd_str = cmd.as_ref();
+    let res = async_remote_execute(cmd_str).await;
+
+    // -1 indicates a connection/RPC error (spawn server likely down)
+    if res.0 == -1 {
+        info!("Spawn server unreachable, falling back to local shell");
+        tokio::task::spawn_blocking({
+            let c = cmd_str.to_string();
+            move || run_local_shell(&c)
+        })
+        .await
+        .unwrap_or((-6, "".into(), "Task join error".into()))
+    } else {
+        res
+    }
+}
+
+fn run_local_shell(cmd: &str) -> (i32, String, String) {
+    // This executes via the system shell to match "sh!" behavior
+    let output = std::process::Command::new("sh").args(["-c", cmd]).output();
+
+    match output {
+        Ok(out) => (
+            out.status.code().unwrap_or(0),
+            String::from_utf8_lossy(&out.stdout).to_string(),
+            String::from_utf8_lossy(&out.stderr).to_string(),
+        ),
+        Err(e) => (-1, "".to_string(), format!("Local Execution Error: {e}")),
+    }
+}
+
+/// Macro that tries to execute on spawn server (sync), falls back to local shell if server is down
 #[macro_export]
-macro_rules! srpc {
+macro_rules! srpc_sh {
     ( $( $cmd:tt )* ) => {{
-        $crate::sync_remote_execute(format!($( $cmd )*))
+        $crate::sync_remote_or_local(format!($( $cmd )*))
+    }};
+}
+
+/// Macro that tries to execute on spawn server (async), falls back to local shell if server is down
+#[macro_export]
+macro_rules! arpc_sh {
+    ( $( $cmd:tt )* ) => {{
+        $crate::async_remote_or_local(format!($( $cmd )*)).await
     }};
 }
 
 /// Macro to execute the given command on the spawn server using synchronous communcation
-#[deprecated(
-    since = "0.1.2",
-    note = "Use `srpc!` instead. This macro will be removed."
-)]
 #[macro_export]
-macro_rules! sh {
+macro_rules! srpc {
     ( $( $cmd:tt )* ) => {{
         $crate::sync_remote_execute(format!($( $cmd )*))
     }};
@@ -179,4 +229,3 @@ macro_rules! arpc {
         $crate::async_remote_execute(format!($( $cmd )*))
     }};
 }
-
