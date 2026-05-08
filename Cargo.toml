@@ -8,12 +8,12 @@ version = "1.0.0"
 [dependencies]
 actix-rt = "*"
 actix-web = "*"
-reqwest = {version = "*", features = ["native-tls", "json", "blocking"]}
+reqwest = { version = "*", features = ["json", "blocking"] }
 serde = "*"
 serde_derive = "*"
 serde_json = "*"
 shells = "*"
-tokio = {version = "*", features = ["full"]}
+tokio = { version = "*", features = ["full"] }
 tracing = "*"
 tracing-actix-web = "*"
-tracing-subscriber = {version = "*", features = ["env-filter", "fmt"]}
+tracing-subscriber = { version = "*", features = ["env-filter", "fmt"] }
