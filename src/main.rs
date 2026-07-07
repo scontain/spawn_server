@@ -1,36 +1,64 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, get, post, web::Json};
-use shells::sh;
-use spawn_server::{Command, CommandResponse, get_spawn_server_addr};
+use spawn_server::{
+    SpawnServerCommandRequest, SpawnServerCommandResponse, get_spawn_server_addr, run_local_exec,
+    run_local_shell,
+};
 use tracing::{error, info, level_filters::LevelFilter, warn};
 use tracing_actix_web::TracingLogger;
 use tracing_subscriber::EnvFilter;
 
-#[post("/command")]
-async fn info(command: Json<Command>) -> impl Responder {
-    let cmd = command.command.clone();
+fn execute_command_locally(cmd: SpawnServerCommandRequest) -> SpawnServerCommandResponse {
+    match cmd {
+        SpawnServerCommandRequest::Shell { command } => run_local_shell(&command),
+        SpawnServerCommandRequest::Exec {
+            binary,
+            args,
+            env,
+            env_remove,
+        } => run_local_exec(&binary, &args, &env, &env_remove),
+    }
+}
 
-    if command.command.trim().is_empty() {
+#[post("/command")]
+async fn request(command: Json<SpawnServerCommandRequest>) -> impl Responder {
+    let cmd = command.into_inner();
+
+    let is_empty = match &cmd {
+        SpawnServerCommandRequest::Shell { command } => command.trim().is_empty(),
+        SpawnServerCommandRequest::Exec { binary, .. } => binary.trim().is_empty(),
+    };
+    if is_empty {
         return HttpResponse::BadRequest().body("command must not be empty");
     }
 
-    let response = if let Ok((code, stdout, stderr)) =
-        tokio::task::spawn_blocking(move || sh!("{}", command.command)).await
-    {
-        if code != 0 {
-            warn!(%cmd, %stdout, %stderr, "command failed");
-        } else {
-            info!(%cmd, "command executed successfully");
+    let cmd_desc = match &cmd {
+        SpawnServerCommandRequest::Shell { command } => command.clone(),
+        SpawnServerCommandRequest::Exec { binary, args, .. } => {
+            format!("{binary} {}", args.join(" "))
         }
-        CommandResponse {
-            code,
+    };
+
+    let response = if let Ok(SpawnServerCommandResponse {
+        exit_code,
+        stdout,
+        stderr,
+    }) = tokio::task::spawn_blocking(move || execute_command_locally(cmd)).await
+    {
+        if exit_code != 0 {
+            warn!(cmd = %cmd_desc, %stdout, %stderr, "command failed");
+        } else {
+            info!(cmd = %cmd_desc, "command executed successfully");
+        }
+        SpawnServerCommandResponse {
+            exit_code,
             stdout,
             stderr,
         }
     } else {
-        error!(%cmd, "failed to spawn command");
-        CommandResponse {
-            code: 100,
-            stdout: format!("spawn_server: command '{cmd}' failed"),
+        error!(cmd = %cmd_desc, "failed to spawn command");
+        SpawnServerCommandResponse {
+            exit_code: 100,
+            stdout: format!("spawn_server: command '{cmd_desc}' failed"),
             stderr: "spawn error".to_string(),
         }
     };
@@ -59,7 +87,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(TracingLogger::default()) // <-- per-request spans
             .service(index)
-            .service(info)
+            .service(request)
     })
     .bind(addr)?
     .run()

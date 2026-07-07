@@ -1,51 +1,57 @@
-// Simple example of how to use the synchronous client API to
-// talk to the spawn_server
-use spawn_server::{SpawnServerCommandResponse, srpc_exec, srpc_sh};
+// Simple example of run locally execute command with the spawn server
+use spawn_server::{SpawnServerCommandResponse, local_exec, local_sh};
 
 fn main() {
     let SpawnServerCommandResponse {
         exit_code: code,
         stdout,
         stderr,
-    } = srpc_sh!("ls -lrt");
+    } = local_sh!("ls -lrt");
     println!("Blocking:\n - code={code}\n - stdout={stdout}\n - stderr={stderr}");
     let SpawnServerCommandResponse {
         exit_code: code,
         stdout,
         stderr,
-    } = srpc_sh!("ls -la");
+    } = local_sh!("ls -la");
     println!("Blocking:\n - code={code}\n - stdout={stdout}\n - stderr={stderr}");
     let SpawnServerCommandResponse {
         exit_code: code,
         stdout,
         stderr,
-    } = srpc_sh!("ls -la > ls.log");
+    } = local_sh!("ls -la > ls.log");
     println!("Blocking and redirected:\n - code={code}\n - stdout={stdout}\n - stderr={stderr}");
 
     let SpawnServerCommandResponse {
         exit_code: code,
         stdout,
         stderr,
-    } = srpc_exec!("ls", &["-lrt"], [("FOO", "bar_value")]);
+    } = local_exec!(
+        "ls",
+        &["-lrt".to_string()],
+        &[("FOO".to_string(), "bar_value".to_string())]
+    );
     println!("Blocking:\n - code={code}\n - stdout={stdout}\n - stderr={stderr}");
 
     let SpawnServerCommandResponse {
         exit_code: code,
         stdout,
         stderr,
-    } = srpc_exec!("ls", &["-lrt"], Vec::<(&str, &str)>::new(), ["FOO"]);
+    } = local_exec!("ls", &["-lrt".to_string()], &[], &["FOO".to_string()]);
 
     println!("Blocking:\n - code={code}\n - stdout={stdout}\n - stderr={stderr}");
     let SpawnServerCommandResponse {
         exit_code: code,
         stdout,
         stderr,
-    } = srpc_exec!("ls", &["-la"]);
+    } = local_exec!("ls", &["-la".to_string()]);
     println!("Blocking:\n - code={code}\n - stdout={stdout}\n - stderr={stderr}");
     let SpawnServerCommandResponse {
         exit_code: code,
         stdout,
         stderr,
-    } = srpc_exec!("ls", &["-la", ">", "ls.log"]);
+    } = local_exec!(
+        "ls",
+        &["-la".to_string(), ">".to_string(), "ls.log".to_string()]
+    );
     println!("Blocking and redirected:\n - code={code}\n - stdout={stdout}\n - stderr={stderr}");
 }
