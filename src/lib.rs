@@ -90,7 +90,7 @@ fn sync_remote_execute_command(cmd: SpawnServerCommandRequest) -> SpawnServerCom
             return SpawnServerCommandResponse {
                 exit_code: -3,
                 stdout: "".to_string(),
-                stderr: format!("Client Build Error: {e}"),
+                stderr: format!("Client Build Error: {e} (ERROR 24111-3657-3813)"),
             };
         }
     };
@@ -100,7 +100,10 @@ fn sync_remote_execute_command(cmd: SpawnServerCommandRequest) -> SpawnServerCom
             if resp.status().is_success() {
                 match resp.json::<SpawnServerCommandResponse>() {
                     Ok(result) => {
-                        info!(code = result.exit_code, "sync command executed successfully");
+                        info!(
+                            code = result.exit_code,
+                            "sync command executed successfully"
+                        );
                         result
                     }
                     Err(e) => {
@@ -108,7 +111,7 @@ fn sync_remote_execute_command(cmd: SpawnServerCommandRequest) -> SpawnServerCom
                         SpawnServerCommandResponse {
                             exit_code: -4,
                             stdout: "".to_string(),
-                            stderr: format!("JSON parse error: {e}"),
+                            stderr: format!("JSON parse error: {e} (ERROR 13797-13665-5237)"),
                         }
                     }
                 }
@@ -118,14 +121,17 @@ fn sync_remote_execute_command(cmd: SpawnServerCommandRequest) -> SpawnServerCom
                     Ok(result) => SpawnServerCommandResponse {
                         exit_code: -2,
                         stdout: result.stdout,
-                        stderr: format!("No Success Error: {}", result.stderr),
+                        stderr: format!(
+                            "No Success Error: {} (ERROR 23250-17340-19357)",
+                            result.stderr
+                        ),
                     },
                     Err(e) => {
                         error!(error = %e, "Failed to parse error response JSON");
                         SpawnServerCommandResponse {
                             exit_code: -5,
                             stdout: "".to_string(),
-                            stderr: format!("JSON parse error: {e}"),
+                            stderr: format!("JSON parse error: {e} (ERROR 6702-11519-24912)"),
                         }
                     }
                 }
@@ -136,7 +142,7 @@ fn sync_remote_execute_command(cmd: SpawnServerCommandRequest) -> SpawnServerCom
             SpawnServerCommandResponse {
                 exit_code: -1,
                 stdout: "".to_string(),
-                stderr: format!("RPC Error: {e}"),
+                stderr: format!("RPC Error: {e} (ERROR 7931-24668-7035)"),
             }
         }
     }
@@ -158,7 +164,7 @@ async fn async_remote_execute_command(
             return SpawnServerCommandResponse {
                 exit_code: -3,
                 stdout: "".to_string(),
-                stderr: format!("Client Build Error: {e}"),
+                stderr: format!("Client Build Error: {e} (ERROR 9346-11546-25221)"),
             };
         }
     };
@@ -169,7 +175,10 @@ async fn async_remote_execute_command(
             if resp.status().is_success() {
                 match resp.json::<SpawnServerCommandResponse>().await {
                     Ok(result) => {
-                        info!(code = result.exit_code, "async command executed successfully");
+                        info!(
+                            code = result.exit_code,
+                            "async command executed successfully"
+                        );
                         result
                     }
                     Err(e) => {
@@ -177,7 +186,7 @@ async fn async_remote_execute_command(
                         SpawnServerCommandResponse {
                             exit_code: -4,
                             stdout: "".to_string(),
-                            stderr: format!("JSON parse error: {e}"),
+                            stderr: format!("JSON parse error: {e} (ERROR 16134-5921-23390"),
                         }
                     }
                 }
@@ -186,7 +195,7 @@ async fn async_remote_execute_command(
                 SpawnServerCommandResponse {
                     exit_code: -2,
                     stdout: "".to_string(),
-                    stderr: "No Success Error".to_string(),
+                    stderr: format!("No Success Error (ERROR 18218-21746-5563)"),
                 }
             }
         }
@@ -195,7 +204,7 @@ async fn async_remote_execute_command(
             SpawnServerCommandResponse {
                 exit_code: -1,
                 stdout: "".to_string(),
-                stderr: format!("RPC Error: {e}"),
+                stderr: format!("RPC Error: {e} (ERROR 32694-17841-22165)"),
             }
         }
     }
@@ -214,41 +223,63 @@ pub async fn async_remote_execute_shell<T: AsRef<str>>(cmd: T) -> SpawnServerCom
     .await
 }
 
-pub fn sync_remote_execute_exec<B, A, S>(
+pub fn sync_remote_execute_exec<B, A, E, S, K, V, G, H>(
     binary: B,
     args: A,
-    env: Vec<(String, String)>,
-    env_remove: Vec<String>,
+    env: E,
+    env_remove: G,
 ) -> SpawnServerCommandResponse
 where
     B: AsRef<str>,
     A: IntoIterator<Item = S>,
     S: AsRef<str>,
+    E: IntoIterator<Item = (K, V)>,
+    K: AsRef<str>,
+    V: AsRef<str>,
+    G: IntoIterator<Item = H>,
+    H: AsRef<str>,
 {
     sync_remote_execute_command(SpawnServerCommandRequest::Exec {
         binary: binary.as_ref().to_string(),
         args: args.into_iter().map(|a| a.as_ref().to_string()).collect(),
-        env,
-        env_remove,
+        env: env
+            .into_iter()
+            .map(|(k, v)| (k.as_ref().to_string(), v.as_ref().to_string()))
+            .collect(),
+        env_remove: env_remove
+            .into_iter()
+            .map(|g| g.as_ref().to_string())
+            .collect(),
     })
 }
 
-pub async fn async_remote_execute_exec<B, A, S>(
+pub async fn async_remote_execute_exec<B, A, E, S, K, V, G, H>(
     binary: B,
     args: A,
-    env: Vec<(String, String)>,
-    env_remove: Vec<String>,
+    env: E,
+    env_remove: G,
 ) -> SpawnServerCommandResponse
 where
     B: AsRef<str>,
     A: IntoIterator<Item = S>,
     S: AsRef<str>,
+    E: IntoIterator<Item = (K, V)>,
+    K: AsRef<str>,
+    V: AsRef<str>,
+    G: IntoIterator<Item = H>,
+    H: AsRef<str>,
 {
     async_remote_execute_command(SpawnServerCommandRequest::Exec {
         binary: binary.as_ref().to_string(),
         args: args.into_iter().map(|a| a.as_ref().to_string()).collect(),
-        env,
-        env_remove,
+        env: env
+            .into_iter()
+            .map(|(k, v)| (k.as_ref().to_string(), v.as_ref().to_string()))
+            .collect(),
+        env_remove: env_remove
+            .into_iter()
+            .map(|g| g.as_ref().to_string())
+            .collect(),
     })
     .await
 }
@@ -277,7 +308,7 @@ pub async fn async_remote_or_local_shell<T: AsRef<str>>(cmd: T) -> SpawnServerCo
         .unwrap_or(SpawnServerCommandResponse {
             exit_code: -6,
             stdout: "".into(),
-            stderr: "Task join error".into(),
+            stderr: format!("Task join error (ERROR 21874-19963-15097)"),
         })
     } else {
         res
@@ -356,7 +387,7 @@ where
             .unwrap_or(SpawnServerCommandResponse {
                 exit_code: -6,
                 stdout: "".into(),
-                stderr: "Task join error".into(),
+                stderr: format!("Task join error (ERROR 139-11505-18643)"),
             })
     } else {
         res
@@ -375,7 +406,7 @@ pub fn run_local_shell(cmd: &str) -> SpawnServerCommandResponse {
         Err(e) => SpawnServerCommandResponse {
             exit_code: -1,
             stdout: "".to_string(),
-            stderr: format!("Local Execution Error: {e}"),
+            stderr: format!("Local Execution Error: {e} (ERROR 13923-22388-7958)"),
         },
     }
 }
@@ -404,26 +435,45 @@ pub fn run_local_exec(
         Err(e) => SpawnServerCommandResponse {
             exit_code: -1,
             stdout: "".to_string(),
-            stderr: format!("Local Execution Error: {e}"),
+            stderr: format!("Local Execution Error: {e} (ERROR 15400-27832-29418)"),
         },
     }
 }
 
 /// This macro executes a command via the system shell synchronously, either remotely via the spawn_server or locally if the spawn_server is unreachable.
-/// Prefer using `srpc_exec!` for known binaries and arguments to avoid shell interpretation and reduce injection risk.
+/// Prefer using `srpc_or_local_exec!` for known binaries and arguments to avoid shell interpretation and reduce injection risk.
 #[macro_export]
-macro_rules! srpc_sh {
+macro_rules! srpc_or_local_sh {
     ( $( $cmd:tt )* ) => {{
         $crate::sync_remote_or_local_shell(format!($( $cmd )*))
     }};
 }
 
+/// This macro executes a command via the system shell synchronously remotely via the spawn_server. This fails if the spawn_server is unreachable.
+/// Prefer using `srpc_exec!` or `srpc_or_local_exec!` for known binaries and arguments to avoid shell interpretation and reduce injection risk.
+#[macro_export]
+macro_rules! srpc_sh {
+    ( $( $cmd:tt )* ) => {{
+        $crate::sync_remote_execute_shell(format!($( $cmd )*))
+    }};
+}
+
 /// This macro executes a command via the system shell asynchronously, either remotely via the spawn_server or locally if the spawn_server is unreachable.
-/// Prefer using `arpc_exec!` for known binaries and arguments to avoid shell interpretation and reduce injection risk.
+/// Prefer using `arpc_or_local_exec!` for known binaries and arguments to avoid shell interpretation and reduce injection risk.
+#[macro_export]
+macro_rules! arpc_or_local_sh {
+    ( $( $cmd:tt )* ) => {{
+        $crate::async_remote_or_local_shell(format!($( $cmd )*))
+    }};
+}
+
+/// This macro executes a command via the system shell asynchronously remotely via the spawn_server. This fails if the spawn_server is unreachable.
+/// The `arpc_or_local_sh!` macro is preferred for cases where the spawn_server may be unreachable.
+/// Prefer using `arpc_exec!` or `arpc_or_local_exec!` for known binaries and arguments to avoid shell interpretation and reduce injection risk.
 #[macro_export]
 macro_rules! arpc_sh {
     ( $( $cmd:tt )* ) => {{
-        $crate::async_remote_or_local_shell(format!($( $cmd )*))
+        $crate::async_remote_execute_shell(format!($( $cmd )*))
     }};
 }
 
@@ -436,9 +486,8 @@ macro_rules! local_sh {
 }
 
 /// This macro executes a binary with arguments synchronously, either remotely via the spawn_server or locally if the spawn_server is unreachable.
-/// Prefer using `srpc_exec!` for known binaries and arguments to avoid shell interpretation and reduce injection risk.
 #[macro_export]
-macro_rules! srpc_exec {
+macro_rules! srpc_or_local_exec {
     ($binary:expr, $args:expr) => {{
         $crate::sync_remote_or_local_exec(
             $binary,
@@ -451,10 +500,25 @@ macro_rules! srpc_exec {
     ($binary:expr, $args:expr, $env:expr, $env_remove:expr) => {{ $crate::sync_remote_or_local_exec($binary, $args, $env, $env_remove) }};
 }
 
-/// This macro executes a binary with arguments asynchronously, either remotely via the spawn_server or locally if the spawn_server is unreachable.
-/// Prefer using `arpc_exec!` for known binaries and arguments to avoid shell interpretation and reduce injection risk.
+/// This macro executes a binary with arguments synchronously remotely via the spawn_server. This fails if the spawn_server is unreachable.
+/// Prefer using `srpc_or_local_exec!` which also allows for local execution if the spawn_server is unreachable.
 #[macro_export]
-macro_rules! arpc_exec {
+macro_rules! srpc_exec {
+    ($binary:expr, $args:expr) => {{
+        $crate::sync_remote_execute_exec(
+            $binary,
+            $args,
+            Vec::<(&str, &str)>::new(),
+            Vec::<(&str)>::new(),
+        )
+    }};
+    ($binary:expr, $args:expr, $env:expr) => {{ $crate::sync_remote_execute_exec($binary, $args, $env, Vec::<&str>::new()) }};
+    ($binary:expr, $args:expr, $env:expr, $env_remove:expr) => {{ $crate::sync_remote_execute_exec($binary, $args, $env, $env_remove) }};
+}
+
+/// This macro executes a binary with arguments asynchronously, either remotely via the spawn_server or locally if the spawn_server is unreachable.
+#[macro_export]
+macro_rules! arpc_or_local_exec {
     ($binary:expr, $args:expr) => {{
         $crate::async_remote_or_local_exec(
             $binary,
@@ -465,6 +529,22 @@ macro_rules! arpc_exec {
     }};
     ($binary:expr, $args:expr, $env:expr) => {{ $crate::async_remote_or_local_exec($binary, $args, $env, Vec::<&str>::new()) }};
     ($binary:expr, $args:expr, $env:expr, $env_remove:expr) => {{ $crate::async_remote_or_local_exec($binary, $args, $env, $env_remove) }};
+}
+
+/// This macro executes a binary with arguments asynchronously remotely via the spawn_server. This fails if the spawn_server is unreachable.
+/// Prefer using `arpc_or_local_exec!` which also allows for local execution if the spawn_server is unreachable.
+#[macro_export]
+macro_rules! arpc_exec {
+    ($binary:expr, $args:expr) => {{
+        $crate::async_remote_execute_exec(
+            $binary,
+            $args,
+            Vec::<(&str, &str)>::new(),
+            Vec::<(&str)>::new(),
+        )
+    }};
+    ($binary:expr, $args:expr, $env:expr) => {{ $crate::async_remote_execute_exec($binary, $args, $env, Vec::<&str>::new()) }};
+    ($binary:expr, $args:expr, $env:expr, $env_remove:expr) => {{ $crate::async_remote_execute_exec($binary, $args, $env, $env_remove) }};
 }
 
 /// This macro executes a binary with arguments locally.
