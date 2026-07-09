@@ -6,11 +6,15 @@ This Rust library permits to execute programs without replying on `fork`. This c
 
 The spawn server supports commands in two modes:
 
-1. Shell Mode (`srpc_sh!`, `arpc_sh!`): The command is ran through a system shell.
+1. Shell Mode (`srpc_sh!`, `arpc_sh!`, `srpc_or_local_sh`, `arpc_or_local_sh`): The command is ran through a system shell.
 
-    Use macro `srpc_sh!` to send requests to the spawn server. This is a synchronous call. 
+    Use macro `srpc_*_sh!` to send synchronous requests to the spawn server. For asynchronous calls, use macro `arpc_*_sh!`.
 
-    For asynchronous calls, use macro `arpc_sh!`. Import these macros in your Rust program as follows:
+    Prefer using `*_exec!` for known binaries and arguments to avoid shell interpretation and reduce injection risk.
+   
+    The `*_or_local_sh!` also allows for local shell execution if the spawn_server is unreachable.  
+
+    Import these macros in your Rust program as follows:
 
     ```rust
     use spawn_server::{arpc_sh, srpc_sh};
@@ -19,11 +23,13 @@ The spawn server supports commands in two modes:
     }
     ```
 
-2. Exec Mode (`srpc_exec`, `arpc_exec`): The command to run is directly executed.
+2. Exec Mode (`srpc_exec`, `arpc_exec`, `srpc_or_local_exec`, `arpc_or_local_exec`): The command to run is directly executed.
 
-    Use macro `srpc_exec!` to send requests to the spawn server. This is a synchronous call. 
+    Use macros `srpc_*_exec!` to send synchronous requests to the spawn server. For asynchronous calls, use macro `arpc_*_exec!`. 
 
-    For asynchronous calls, use macro `arpc_exec!`. Import these macros in your Rust program as follows:
+    The `*_or_local_exec!` also allows for local execution if the spawn_server is unreachable.  
+
+    Import these macros in your Rust program as follows:
 
     ```rust
     use spawn_server::{arpc_exec, srpc_exec};
@@ -31,6 +37,7 @@ The spawn server supports commands in two modes:
         srpc_exec!("ls", &["-la", ">", "ls.log"]);
     }
     ```
+    
 Also, add the following to your `Cargo.toml` file:
 
 ```toml
