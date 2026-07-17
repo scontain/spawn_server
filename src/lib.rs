@@ -195,7 +195,7 @@ async fn async_remote_execute_command(
                 SpawnServerCommandResponse {
                     exit_code: -2,
                     stdout: "".to_string(),
-                    stderr: format!("No Success Error (ERROR 18218-21746-5563)"),
+                    stderr: "No Success Error (ERROR 18218-21746-5563)".to_string(),
                 }
             }
         }
@@ -308,7 +308,7 @@ pub async fn async_remote_or_local_shell<T: AsRef<str>>(cmd: T) -> SpawnServerCo
         .unwrap_or(SpawnServerCommandResponse {
             exit_code: -6,
             stdout: "".into(),
-            stderr: format!("Task join error (ERROR 21874-19963-15097)"),
+            stderr: "Task join error (ERROR 21874-19963-15097)".to_string(),
         })
     } else {
         res
@@ -387,7 +387,7 @@ where
             .unwrap_or(SpawnServerCommandResponse {
                 exit_code: -6,
                 stdout: "".into(),
-                stderr: format!("Task join error (ERROR 139-11505-18643)"),
+                stderr: "Task join error (ERROR 139-11505-18643)".to_string(),
             })
     } else {
         res
