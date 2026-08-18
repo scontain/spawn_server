@@ -1,18 +1,18 @@
 [package]
 edition = "2024"
 name = "spawn_server"
-version = "2.1.0"
+version = "2.1.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-rt = "*"
-actix-web = "*"
-reqwest = { version = "*", features = ["json", "blocking"] }
-serde = "*"
-serde_derive = "*"
-serde_json = "*"
-tokio = { version = "*", features = ["full"] }
-tracing = "*"
-tracing-actix-web = "*"
-tracing-subscriber = { version = "*", features = ["env-filter", "fmt"] }
+actix-rt = "2"
+actix-web = { version = "4", default-features = false, features = ["macros"] }
+reqwest = { version = "0.13", features = ["json", "blocking"] }
+serde = "1"
+serde_derive = "1"
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-actix-web = "0.7"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
