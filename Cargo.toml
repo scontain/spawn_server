@@ -7,7 +7,7 @@ version = "1.0.1"
 
 [dependencies]
 actix-rt = "*"
-actix-web = "*"
+actix-web = { version = "*", default-features = false, features = ["macros"] }
 reqwest = {version = "*", features = ["native-tls", "json", "blocking"]}
 serde = "*"
 serde_derive = "*"
