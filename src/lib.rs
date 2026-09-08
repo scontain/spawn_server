@@ -1,5 +1,6 @@
 use serde_derive::{Deserialize, Serialize};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::os::unix::process::ExitStatusExt;
 
 use tracing::{error, info, warn};
 
@@ -399,7 +400,14 @@ pub fn run_local_shell(cmd: &str) -> SpawnServerCommandResponse {
     let output = std::process::Command::new("sh").args(["-c", cmd]).output();
     match output {
         Ok(out) => SpawnServerCommandResponse {
-            exit_code: out.status.code().unwrap_or(0),
+            // A process killed by a signal (e.g. an aborted SGX enclave) reports no exit
+            // code here - code() is None - and must not be treated as a successful exit
+            // (0). Use the POSIX/shell convention (128 + signal number) instead, so
+            // callers' existing `code != 0` checks correctly see this as a failure.
+            exit_code: out
+                .status
+                .code()
+                .unwrap_or_else(|| 128 + out.status.signal().unwrap_or(0)),
             stdout: String::from_utf8_lossy(&out.stdout).to_string(),
             stderr: String::from_utf8_lossy(&out.stderr).to_string(),
         },
@@ -428,7 +436,14 @@ pub fn run_local_exec(
     }
     match command.output() {
         Ok(out) => SpawnServerCommandResponse {
-            exit_code: out.status.code().unwrap_or(0),
+            // A process killed by a signal (e.g. an aborted SGX enclave) reports no exit
+            // code here - code() is None - and must not be treated as a successful exit
+            // (0). Use the POSIX/shell convention (128 + signal number) instead, so
+            // callers' existing `code != 0` checks correctly see this as a failure.
+            exit_code: out
+                .status
+                .code()
+                .unwrap_or_else(|| 128 + out.status.signal().unwrap_or(0)),
             stdout: String::from_utf8_lossy(&out.stdout).to_string(),
             stderr: String::from_utf8_lossy(&out.stderr).to_string(),
         },
