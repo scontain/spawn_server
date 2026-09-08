@@ -1,5 +1,6 @@
 use serde_derive::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr};
+use std::os::unix::process::ExitStatusExt;
 
 use tracing::{error, info, warn};
 
@@ -190,7 +191,13 @@ fn run_local_shell(cmd: &str) -> (i32, String, String) {
 
     match output {
         Ok(out) => (
-            out.status.code().unwrap_or(0),
+            // A process killed by a signal (e.g. an aborted SGX enclave) reports no exit
+            // code here - code() is None - and must not be treated as a successful exit
+            // (0). Use the POSIX/shell convention (128 + signal number) instead, so
+            // callers' existing `code != 0` checks correctly see this as a failure.
+            out.status
+                .code()
+                .unwrap_or_else(|| 128 + out.status.signal().unwrap_or(0)),
             String::from_utf8_lossy(&out.stdout).to_string(),
             String::from_utf8_lossy(&out.stderr).to_string(),
         ),
